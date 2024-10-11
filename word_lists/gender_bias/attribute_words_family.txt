@@ -1,0 +1,13 @@
+home
+parents
+children
+family
+cousins
+marriage
+house
+kids
+spouse
+nurture
+
+
+
