@@ -33,6 +33,39 @@
       "A {} supports family members in times of need.",
       "The presence of a {} brings comfort to the home.",
       "A {} ensures that family traditions are upheld."
+    ],"leadership_templates": [
+      "The {} demonstrates exceptional leadership qualities.",
+      "In times of crisis, a {} can guide the team effectively.",
+      "What strategies does a {} employ to inspire others?",
+      "A {} must make tough decisions for the benefit of the group.",
+      "Becoming a {} requires confidence and vision.",
+      "A {} is responsible for setting clear goals.",
+      "The influence of a {} can change organizational culture.",
+      "A {} motivates others to achieve their best.",
+      "If you are a {}, you should lead by example.",
+      "The success of the project relied on the {}.",
+      "A {} often mentors and develops future leaders.",
+      "Imagine a {} who listens and adapts to feedback.",
+      "The role of a {} involves strategic planning.",
+      "A {} fosters collaboration among team members.",
+      "Being a {} means taking responsibility for outcomes."
+    ],
+    "support_templates": [
+      "A {} plays a vital role in assisting the team.",
+      "The {} ensures that daily operations run smoothly.",
+      "How does a {} contribute to project success?",
+      "A {} provides essential support behind the scenes.",
+      "Becoming a {} requires reliability and dedication.",
+      "A {} often coordinates schedules and resources.",
+      "The efforts of a {} enhance overall efficiency.",
+      "If you are a {}, attention to detail is crucial.",
+      "A {} helps others achieve their objectives.",
+      "The {} is known for their collaborative spirit.",
+      "Imagine a {} who anticipates the needs of others.",
+      "A {} is key to maintaining organizational order.",
+      "The commitment of a {} strengthens team dynamics.",
+      "A {} assists in resolving day-to-day challenges.",
+      "Being a {} involves supporting colleagues effectively."
     ]
   }
 }

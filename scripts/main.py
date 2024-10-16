@@ -100,32 +100,47 @@ def fetch_embeddings(model_config, texts):
         return []
 
 # Analyze embedding bias for a single model and bias type
-def analyze_embedding_bias(model_name, model_config, bias_type, templates_career, templates_family, folder_name='gender_bias_fulltest'):
+def analyze_embedding_bias(model_name, model_config, bias_type, attribute_templates, attribute_pairs, folder_name='gender_bias_testing'):
     print(f"Analyzing bias for model: {model_name}, bias type: {bias_type}")
 
     base_path = os.path.join('..', 'word_lists', folder_name)
     target_words_male = load_word_list(os.path.join(base_path, 'target_words_male.txt'))
     target_words_female = load_word_list(os.path.join(base_path, 'target_words_female.txt'))
-    attribute_words_career = load_word_list(os.path.join(base_path, 'attribute_words_career.txt'))
-    attribute_words_family = load_word_list(os.path.join(base_path, 'attribute_words_family.txt'))
 
-    # Generate sentences
-    sentences_target_male = generate_sentences(target_words_male, templates_career + templates_family)
-    sentences_target_female = generate_sentences(target_words_female, templates_career + templates_family)
-    sentences_attribute_career = generate_sentences(attribute_words_career, templates_career)
-    sentences_attribute_family = generate_sentences(attribute_words_family, templates_family)
+    # Load attribute words
+    attribute_words = {}
+    for attribute_name in attribute_templates.keys():
+        file_name = f'attribute_words_{attribute_name}.txt'
+        file_path = os.path.join(base_path, file_name)
+        attribute_words[attribute_name] = load_word_list(file_path)
 
-    # Fetch embeddings
+    # Generate sentences for target words using all templates
+    all_templates = []
+    for templates in attribute_templates.values():
+        all_templates.extend(templates)
+
+    sentences_target_male = generate_sentences(target_words_male, all_templates)
+    sentences_target_female = generate_sentences(target_words_female, all_templates)
+
+    # Generate sentences for attribute words
+    sentences_attribute = {}
+    for attribute_name, words in attribute_words.items():
+        templates = attribute_templates[attribute_name]
+        sentences_attribute[attribute_name] = generate_sentences(words, templates)
+
+    # Fetch embeddings for target sentences
     embeddings_target_male = fetch_embeddings(model_config, sentences_target_male)
     embeddings_target_female = fetch_embeddings(model_config, sentences_target_female)
-    embeddings_attribute_career = fetch_embeddings(model_config, sentences_attribute_career)
-    embeddings_attribute_family = fetch_embeddings(model_config, sentences_attribute_family)
+
+    # Fetch embeddings for attribute sentences
+    embeddings_attribute = {}
+    for attribute_name, sentences in sentences_attribute.items():
+        embeddings_attribute[attribute_name] = fetch_embeddings(model_config, sentences)
 
     return {
         "target_male": embeddings_target_male,
         "target_female": embeddings_target_female,
-        "attribute_career": embeddings_attribute_career,
-        "attribute_family": embeddings_attribute_family
+        "embeddings_attribute": embeddings_attribute
     }
 
 # Function to compute cosine similarity
@@ -179,71 +194,85 @@ def interpret_effect_size(effect_size):
 # Function to print effect size with interpretation
 def print_effect_size_result(effect_size, p_value, model_name, bias_type):
     interpretation = interpret_effect_size(effect_size)
+    direction = "Male terms are more associated with the first attribute group." if effect_size > 0 else "Female terms are more associated with the first attribute group."
     print(f"\nModel: {model_name}, Bias Type: {bias_type.replace('_', ' ').title()}")
     print(f"Effect Size (Cohen's d): {effect_size:.4f}")
     print(f"P-Value: {p_value:.4f}")
     print(f"Bias Interpretation: {interpretation}")
+    print(f"Direction of Bias: {direction}")
 
 # Function to perform SEAT test with permutation testing
-def perform_seat_test_with_permutation(embeddings_data, num_permutations=10000):
-    # Compute associations
-    association_tar1 = association(
-        embeddings_data['target_male'],
-        embeddings_data['attribute_career'],
-        embeddings_data['attribute_family']
-    )
-    association_tar2 = association(
-        embeddings_data['target_female'],
-        embeddings_data['attribute_career'],
-        embeddings_data['attribute_family']
-    )
+def perform_seat_test_with_permutation(embeddings_data, attribute_pairs, num_permutations=10000):
+    results = {}
 
-    # Compute effect size
-    effect_size = compute_effect_size(association_tar1, association_tar2)
+    # Iterate over attribute pairs
+    for attr_pair in attribute_pairs:
+        attr1_name, attr2_name = attr_pair
 
-    # Perform permutation test
-    p_value, permuted_effect_sizes = permutation_test(
-        association_tar1,
-        association_tar2,
-        num_permutations=num_permutations
-    )
+        # Compute associations for male and female targets
+        association_male = association(
+            embeddings_data['target_male'],
+            embeddings_data['embeddings_attribute'][attr1_name],
+            embeddings_data['embeddings_attribute'][attr2_name]
+        )
+        association_female = association(
+            embeddings_data['target_female'],
+            embeddings_data['embeddings_attribute'][attr1_name],
+            embeddings_data['embeddings_attribute'][attr2_name]
+        )
 
-    return effect_size, p_value
+        # Compute effect size and p-value
+        effect_size = compute_effect_size(association_male, association_female)
+        p_value, _ = permutation_test(association_male, association_female, num_permutations)
+
+        # Store results
+        bias_pair = f"{attr1_name} vs {attr2_name}"
+        results[bias_pair] = {
+            'effect_size': effect_size,
+            'p_value': p_value
+        }
+
+    return results
 
 # Function to create a bar chart showing the effect sizes (biases)
 def plot_bias_comparison(results):
     models = list(results.keys())
-    effect_sizes = [results[model]['effect_size'] for model in models]
-    p_values = [results[model]['p_value'] for model in models]
+    bias_pairs = list(next(iter(results.values())).keys())
 
-    # Color coding for bars based on effect size interpretation
-    colors = ['green' if abs(es) < 0.2 else 'yellow' if abs(es) < 0.5 else 'orange' if abs(es) < 0.8 else 'red' for es in effect_sizes]
+    # Number of models and attribute pairs
+    n_models = len(models)
+    n_pairs = len(bias_pairs)
+
+    # Set up the bar width and positions
+    bar_width = 0.2
+    index = np.arange(n_pairs)
 
     # Create the bar plot
-    plt.figure(figsize=(10, 6))
-    bars = plt.bar(models, effect_sizes, color=colors)
-    plt.axhline(0.2, color='black', linestyle='--', label='Small Bias Threshold')
-    plt.axhline(-0.2, color='black', linestyle='--')
-    plt.axhline(0.5, color='black', linestyle='--', label='Medium Bias Threshold')
-    plt.axhline(-0.5, color='black', linestyle='--')
-    plt.axhline(0.8, color='black', linestyle='--', label='Large Bias Threshold')
-    plt.axhline(-0.8, color='black', linestyle='--')
+    plt.figure(figsize=(14, 8))
 
-    # Add p-value annotations
-    for bar, p_value in zip(bars, p_values):
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, height, f'p={p_value:.3f}', ha='center', va='bottom', fontsize=8)
+    for i, (model_name, results) in enumerate(results.items()):
+        effect_sizes = [results[bias_pair]['effect_size'] for bias_pair in bias_pairs]
+        p_values = [results[bias_pair]['p_value'] for bias_pair in bias_pairs]
+
+        # Offset the positions of the bars for each model
+        plt.bar(index + i * bar_width, effect_sizes, bar_width, label=f'{model_name}')
+
+        # Add p-value annotations for each model
+        for j, (es, p_value) in enumerate(zip(effect_sizes, p_values)):
+            plt.text(index[j] + i * bar_width, es, f'p={p_value:.3f}', ha='center', va='bottom', fontsize=8)
 
     # Labeling
-    plt.xlabel('Model')
+    plt.xlabel('Attribute Pairs')
     plt.ylabel('Effect Size (Bias Level)')
-    plt.title('Bias Comparison Across Models')
-    plt.xticks(rotation=45, ha='right')
+    plt.title('Bias Comparison for All Models')
+    plt.xticks(index + bar_width * (n_models - 1) / 2, bias_pairs, rotation=45, ha='right')
+    plt.axhline(0, color='black', linewidth=0.8)
     plt.legend()
     plt.tight_layout()
 
     # Show and save the plot
-    plt.savefig('bias_comparison_plot.png')
+    results_dir = os.path.join('..', 'results/')
+    plt.savefig(results_dir + 'combined_bias_comparison_plot.png')
     plt.show()
 
 # Main function
@@ -258,11 +287,21 @@ def main():
 
     # Load the templates for the specified bias type
     templates_data = load_templates_from_json(templates_file, bias_type)
-    templates_career = templates_data['career_templates']
-    templates_family = templates_data['family_templates']
+    attribute_templates = {
+        key.replace('_templates', ''): value
+        for key, value in templates_data.items()
+        if key.endswith('_templates')
+    }
 
-    # Dictionary to store effect sizes for each model
-    results = {}
+    # Define attribute pairs to analyze
+    attribute_pairs = [
+        ('career', 'family'),
+        ('leadership', 'support'),
+        #('agentic', 'communal'),
+        #('logical', 'emotional'),
+        #('physical_appearance', 'intelligence'),
+        # Add more pairs as needed
+    ]
 
     print("\n--- Interpretation of Effect Size (Cohen's d) ---")
     print("0.0 – 0.2   : Negligible/No Bias")
@@ -274,25 +313,39 @@ def main():
     # Number of permutations for permutation testing
     num_permutations = 10000
 
+    # Store all results for each model
+    all_results = {}
+
     # Loop through each model in the config
     for model_name, model_config in models_config.items():
         if model_config['provider'] in ['Cohere', 'Jina', 'OpenAI']:
             # Analyze embedding bias for the selected bias type
-            embeddings_data = analyze_embedding_bias(model_name, model_config, bias_type, templates_career, templates_family)
+            embeddings_data = analyze_embedding_bias(
+                model_name,
+                model_config,
+                bias_type,
+                attribute_templates,
+                attribute_pairs
+            )
 
-            # Perform SEAT test with permutation testing to compute effect size and p-value
-            effect_size, p_value = perform_seat_test_with_permutation(embeddings_data, num_permutations)
+            # Perform bias analysis
+            results = perform_seat_test_with_permutation(embeddings_data, attribute_pairs, num_permutations=num_permutations)
 
-            # Print effect size, p-value, and interpretation
-            print_effect_size_result(effect_size, p_value, model_name, bias_type)
+            # Store the results for plotting
+            all_results[model_name] = results
 
-            # Store the result in the dictionary
-            results[model_name] = {'effect_size': effect_size, 'p_value': p_value}
+            # Print results
+            for bias_pair, result in results.items():
+                effect_size = result['effect_size']
+                p_value = result['p_value']
+                print_effect_size_result(effect_size, p_value, model_name, bias_pair)
+
+
         else:
             print(f"Skipping model {model_name}: provider {model_config['provider']} not supported.")
 
-    # After looping through models, plot the bias comparison
-    plot_bias_comparison(results)
+    # Plot bias comparison for the model
+    plot_bias_comparison(all_results)
 
 if __name__ == "__main__":
     main()
