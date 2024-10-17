@@ -262,7 +262,7 @@ def plot_bias_comparison(results):
             plt.text(index[j] + i * bar_width, es, f'p={p_value:.3f}', ha='center', va='bottom', fontsize=8)
 
     # Labeling
-    plt.xlabel('Attribute Pairs')
+    plt.xlabel('Effect Size (Cohensd) \n Positive: Bias Towards Males with Career; Negative: Bias Towards Females with Career')
     plt.ylabel('Effect Size (Bias Level)')
     plt.title('Bias Comparison for All Models')
     plt.xticks(index + bar_width * (n_models - 1) / 2, bias_pairs, rotation=45, ha='right')
@@ -274,6 +274,99 @@ def plot_bias_comparison(results):
     results_dir = os.path.join('..', 'results/')
     plt.savefig(results_dir + 'combined_bias_comparison_plot.png')
     plt.show()
+
+# Function to create a diverging bar chart showing the effect sizes (biases)
+def plot_diverging_bias_comparison(results):
+    models = list(results.keys())
+    bias_pairs = list(next(iter(results.values())).keys())
+
+    # Number of models and attribute pairs
+    n_models = len(models)
+    n_pairs = len(bias_pairs)
+
+    # Set up figure size and subplots
+    fig, axes = plt.subplots(n_pairs, 1, figsize=(10, 6 * n_pairs), sharex=True)
+    if n_pairs == 1:
+        axes = [axes]  # Ensure axes is always iterable
+
+    # Loop through each attribute pair to create diverging bar charts
+    for i, attr_pair in enumerate(bias_pairs):
+        effect_sizes = []
+        model_labels = []
+        p_values = []
+
+        # Gather effect sizes, p-values, and corresponding model names
+        for model_name, model_results in results.items():
+            effect_size = model_results[attr_pair]['effect_size']
+            p_value = model_results[attr_pair].get('p_value', None)  # Assuming p-values are included
+            effect_sizes.append(effect_size)
+            p_values.append(p_value)
+            model_labels.append(model_name)
+
+        # Convert to numpy array for easier processing
+        effect_sizes = np.array(effect_sizes)
+
+        # Set bar colors based on the direction of the bias
+        bar_colors = []
+        for es in effect_sizes:
+            if abs(es) >= 0.8:
+                bar_colors.append('red')  # Large Bias
+            elif abs(es) >= 0.5:
+                bar_colors.append('yellow')  # Medium Bias
+            elif abs(es) >= 0.2:
+                bar_colors.append('green')  # Small Bias
+            else:
+                bar_colors.append('tab:blue')  # Negligible/No Bias
+
+        # Plot the diverging bars
+        axes[i].barh(model_labels, effect_sizes, color=bar_colors, edgecolor='black')
+
+        # Emphasize the zero line (no bias)
+        axes[i].axvline(0, color='blue', linewidth=2)  # Draw the central axis with a thicker blue line
+
+        # Add vertical threshold lines
+        axes[i].axvline(0.2, color='black', linestyle='--', linewidth=1, label='Small Bias Threshold')
+        axes[i].axvline(-0.2, color='black', linestyle='--', linewidth=1)
+        axes[i].axvline(0.5, color='black', linestyle='-.', linewidth=1, label='Medium Bias Threshold')
+        axes[i].axvline(-0.5, color='black', linestyle='-.', linewidth=1)
+        axes[i].axvline(0.8, color='black', linestyle=':', linewidth=1, label='Large Bias Threshold')
+        axes[i].axvline(-0.8, color='black', linestyle=':', linewidth=1)
+
+        # Update the title based on the attribute pair
+        axes[i].set_title(
+            f"Positive Values → Bias Associating Males with 'Career' over 'Family' \n Negative Values → Bias Associating Females with 'Career' over 'Family'",
+            fontsize=14)
+
+        # Add labels and title for leadership/support
+        if "leadership" in attr_pair.lower():
+            axes[i].set_title(
+                f"Negative Values → Bias Associating Females with 'Leadership' over 'Support '  \n Negative Values → Bias Associating Females with 'Leadership' over 'Support' ",
+                fontsize=14)
+
+        # Set limits for better visualization
+        axes[i].set_xlim([-1.0, 1.0])
+
+        # Add effect size and p-value labels on top of each bar
+        for j, (effect_size, p_value) in enumerate(zip(effect_sizes, p_values)):
+            p_val_str = f", p = {p_value:.2f}" if p_value is not None else ""
+            label = f'd = {effect_size:.2f}{p_val_str}'
+            axes[i].text(effect_size, j, label, va='center', ha='left' if effect_size < 0 else 'right',
+                         fontsize=10, color='black', bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
+
+    # Add legend
+    axes[-1].legend(loc='upper right')
+
+    # Add footnote explaining effect sizes
+    fig.text(0.5, -0.02, "Effect sizes are interpreted as: 0.2 = Small Bias, 0.5 = Medium Bias, 0.8 = Large Bias.",
+             ha='center', fontsize=12)
+
+    # Adjust layout and add padding to prevent word cutoff
+    plt.tight_layout(pad=3.0)
+
+    results_dir = os.path.join('..', 'results/')
+    plt.savefig(results_dir + 'diverging_bias_comparison_plot.png', bbox_inches='tight')  # Ensure words are not cut
+    plt.show()
+
 
 # Main function
 def main():
@@ -311,7 +404,8 @@ def main():
     print("------------------------------------------------\n")
 
     # Number of permutations for permutation testing
-    num_permutations = 10000
+    #num_permutations = 10000
+    num_permutations = 1 # testing
 
     # Store all results for each model
     all_results = {}
@@ -345,7 +439,8 @@ def main():
             print(f"Skipping model {model_name}: provider {model_config['provider']} not supported.")
 
     # Plot bias comparison for the model
-    plot_bias_comparison(all_results)
+    #plot_bias_comparison(all_results)
+    plot_diverging_bias_comparison(all_results)  # Uncomment this line to use in the main function
 
 if __name__ == "__main__":
     main()
