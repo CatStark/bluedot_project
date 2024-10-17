@@ -2,11 +2,13 @@ import os
 import json
 import cohere
 import openai
+import voyageai
 import numpy as np
 import requests
 import random
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+
 
 # Function to load model configurations
 def load_model_configs(config_path):
@@ -70,6 +72,18 @@ def get_embeddings_cohere(model_name, texts, cohere_client):
     )
     return np.asarray(response.embeddings)
 
+# Function to get embeddings via Voyage API
+def get_embeddings_voyage(model_name, texts, voyage_client, batch_size=128):
+    all_embeddings = []
+    num_batches = (len(texts) + batch_size - 1) // batch_size  # Calculate the number of batches
+
+    for i in range(num_batches):
+        batch_texts = texts[i * batch_size:(i + 1) * batch_size]
+        response = voyage_client.embed(texts=batch_texts, model=model_name, input_type="document")
+        all_embeddings.extend(response.embeddings)  # Accumulate embeddings from all batches
+
+    return np.asarray(all_embeddings)
+
 # Function to get embeddings via OpenAI API
 def get_embeddings_openai(model_name, texts, api_key):
     from openai import OpenAI
@@ -95,8 +109,11 @@ def fetch_embeddings(model_config, texts):
         return get_embeddings_jina(model_config, texts, api_key)
     elif provider == 'OpenAI':
         return get_embeddings_openai(model_name, texts, api_key)
+    elif provider == 'Voyage':
+        voyage_client = voyageai.Client(api_key)  # Initialize the Voyage client with the API key
+        return get_embeddings_voyage(model_name, texts, voyage_client)
     else:
-        print(f"Unknown provider {provider}. Only Cohere, Jina, and OpenAI are supported at the moment.")
+        print(f"Unknown provider {provider}. Only Cohere, Jina, OpenAI and Voyage are supported at the moment.")
         return []
 
 # Analyze embedding bias for a single model and bias type
@@ -223,13 +240,14 @@ def perform_seat_test_with_permutation(embeddings_data, attribute_pairs, num_per
 
         # Compute effect size and p-value
         effect_size = compute_effect_size(association_male, association_female)
-        p_value, _ = permutation_test(association_male, association_female, num_permutations)
+        p_value, permuted_effect_sizes = permutation_test(association_male, association_female, num_permutations)
 
         # Store results
         bias_pair = f"{attr1_name} vs {attr2_name}"
         results[bias_pair] = {
             'effect_size': effect_size,
-            'p_value': p_value
+            'p_value': p_value,
+            'permuted_effect_sizes': permuted_effect_sizes  # Save permutation test results
         }
 
     return results
@@ -259,7 +277,7 @@ def plot_bias_comparison(results):
 
         # Add p-value annotations for each model
         for j, (es, p_value) in enumerate(zip(effect_sizes, p_values)):
-            plt.text(index[j] + i * bar_width, es, f'p={p_value:.3f}', ha='center', va='bottom', fontsize=8)
+            plt.text(index[j] + i * bar_width, es, f'p={p_value:.4f}', ha='center', va='bottom', fontsize=8)
 
     # Labeling
     plt.xlabel('Effect Size (Cohensd) \n Positive: Bias Towards Males with Career; Negative: Bias Towards Females with Career')
@@ -343,13 +361,15 @@ def plot_diverging_bias_comparison(results):
                 f"Negative Values → Bias Associating Females with 'Leadership' over 'Support '  \n Negative Values → Bias Associating Females with 'Leadership' over 'Support' ",
                 fontsize=14)
 
+
+
         # Set limits for better visualization
         axes[i].set_xlim([-1.0, 1.0])
 
         # Add effect size and p-value labels on top of each bar
         for j, (effect_size, p_value) in enumerate(zip(effect_sizes, p_values)):
-            p_val_str = f", p = {p_value:.2f}" if p_value is not None else ""
-            label = f'd = {effect_size:.2f}{p_val_str}'
+            p_val_str = f", p = {p_value:.4f}" if p_value is not None else ""
+            label = f'd = {effect_size:.4f}{p_val_str}'
             axes[i].text(effect_size, j, label, va='center', ha='left' if effect_size < 0 else 'right',
                          fontsize=10, color='black', bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
 
@@ -367,6 +387,94 @@ def plot_diverging_bias_comparison(results):
     plt.savefig(results_dir + 'diverging_bias_comparison_plot.png', bbox_inches='tight')  # Ensure words are not cut
     plt.show()
 
+
+# Function to create a plot with point estimates and 95% confidence intervals (error bars)
+def plot_point_estimates_with_error_bars(results):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    # Create a plot for each attribute pair (e.g., Career vs Family, Leadership vs Support)
+    for bias_pair in next(iter(results.values())).keys():
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Initialize lists to store data
+        effect_sizes = []
+        confidence_intervals = []
+        model_labels = []
+
+        # Extract effect sizes and calculate confidence intervals for each model
+        for model_name, model_results in results.items():
+            result = model_results[bias_pair]
+            effect_size = result['effect_size']
+            p_value = result['p_value']  # Assuming p-value was already calculated
+
+            # Assuming a fixed standard error for CI calculation
+            # Replace with real standard error if available from permutation test
+            confidence_interval = 1.96 * 0.1  # Replace 0.1 with the real standard error if available
+
+            effect_sizes.append(effect_size)
+            confidence_intervals.append(confidence_interval)
+            model_labels.append(model_name)
+
+        # Convert lists to numpy arrays for easier plotting
+        effect_sizes = np.array(effect_sizes)
+        confidence_intervals = np.array(confidence_intervals)
+
+        # Plotting the point estimates with error bars (95% CI)
+        ax.errorbar(model_labels, effect_sizes, yerr=confidence_intervals, fmt='o', capsize=5, capthick=2, color='blue',
+                    label="Effect Size (Cohen's d)")
+
+        # Horizontal line at y = 0 for visual reference (no bias)
+        ax.axhline(0, color='red', linestyle='--', linewidth=1.5)
+
+        # Labels and title
+        ax.set_ylabel("Effect Size (Cohen's d)")
+        ax.set_xlabel("Models")
+        ax.set_title(f"{bias_pair.replace('_', ' ').title()} Bias: Point Estimates with 95% Confidence Intervals")
+
+        # Rotate model labels on x-axis for better readability
+        plt.xticks(rotation=45, ha='right')
+
+        # Display grid for better readability
+        ax.grid(True, linestyle='--', alpha=0.7)
+
+        # Save and show the plot
+        plt.tight_layout()
+        plt.savefig(f'../results/{bias_pair}_combined_point_estimate_plot.png')
+        plt.show()
+
+
+
+
+# Helper function to convert numpy arrays to lists for JSON serialization
+def convert_numpy_to_list(data):
+    if isinstance(data, np.ndarray):
+        return data.tolist()
+    elif isinstance(data, dict):
+        return {key: convert_numpy_to_list(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [convert_numpy_to_list(item) for item in data]
+    else:
+        return data
+
+
+# Function to save results to a JSON file
+def save_results_to_json(results, file_name='bias_analysis_results.json', output_dir='../results/'):
+    # Ensure the output directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Convert numpy arrays in the results to lists
+    results_converted = convert_numpy_to_list(results)
+
+    # Define the full path to the output file
+    output_file = os.path.join(output_dir, file_name)
+
+    # Save the converted results to JSON file
+    with open(output_file, 'w') as json_file:
+        json.dump(results_converted, json_file, indent=4)
+
+    print(f"Results saved to {output_file}")
 
 # Main function
 def main():
@@ -390,9 +498,9 @@ def main():
     attribute_pairs = [
         ('career', 'family'),
         ('leadership', 'support'),
+        #('physical_appearance', 'intelligence'),
         #('agentic', 'communal'),
         #('logical', 'emotional'),
-        #('physical_appearance', 'intelligence'),
         # Add more pairs as needed
     ]
 
@@ -405,14 +513,14 @@ def main():
 
     # Number of permutations for permutation testing
     #num_permutations = 10000
-    num_permutations = 1 # testing
+    num_permutations = 100 # testing
 
     # Store all results for each model
     all_results = {}
 
     # Loop through each model in the config
     for model_name, model_config in models_config.items():
-        if model_config['provider'] in ['Cohere', 'Jina', 'OpenAI']:
+        if model_config['provider'] in ['Voyage']:#'Cohere', 'Voyage', 'OpenAI']:
             # Analyze embedding bias for the selected bias type
             embeddings_data = analyze_embedding_bias(
                 model_name,
@@ -438,9 +546,14 @@ def main():
         else:
             print(f"Skipping model {model_name}: provider {model_config['provider']} not supported.")
 
+    # Save all results to a JSON file
+    save_results_to_json(all_results)
+
     # Plot bias comparison for the model
     #plot_bias_comparison(all_results)
-    plot_diverging_bias_comparison(all_results)  # Uncomment this line to use in the main function
+    plot_diverging_bias_comparison(all_results)
+    plot_point_estimates_with_error_bars(all_results)
+
 
 if __name__ == "__main__":
     main()
