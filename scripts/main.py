@@ -8,6 +8,8 @@ import requests
 import random
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import datetime
+
 
 
 # Function to load model configurations
@@ -294,7 +296,7 @@ def plot_bias_comparison(results):
     plt.show()
 
 # Function to create a diverging bar chart showing the effect sizes (biases)
-def plot_diverging_bias_comparison(results):
+def plot_diverging_bias_comparison(results, output_dir='../results/'):
     models = list(results.keys())
     bias_pairs = list(next(iter(results.values())).keys())
 
@@ -383,13 +385,13 @@ def plot_diverging_bias_comparison(results):
     # Adjust layout and add padding to prevent word cutoff
     plt.tight_layout(pad=3.0)
 
-    results_dir = os.path.join('..', 'results/')
-    plt.savefig(results_dir + 'diverging_bias_comparison_plot.png', bbox_inches='tight')  # Ensure words are not cut
+
+    output_file = os.path.join(output_dir, 'diverging_bias_comparison_plot.png')
+    plt.savefig(output_file, bbox_inches='tight')
     plt.show()
 
-
 # Function to create a plot with point estimates and 95% confidence intervals (error bars)
-def plot_point_estimates_with_error_bars(results):
+def plot_point_estimates_with_error_bars(results, output_dir='../results/'):
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -440,11 +442,11 @@ def plot_point_estimates_with_error_bars(results):
 
         # Save and show the plot
         plt.tight_layout()
-        plt.savefig(f'../results/{bias_pair}_combined_point_estimate_plot.png')
+
+
+        output_file = os.path.join(output_dir, '_combined_point_estimate_plot.png')
+        plt.savefig(output_file, bbox_inches='tight')
         plt.show()
-
-
-
 
 # Helper function to convert numpy arrays to lists for JSON serialization
 def convert_numpy_to_list(data):
@@ -459,8 +461,11 @@ def convert_numpy_to_list(data):
 
 
 # Function to save results to a JSON file
-def save_results_to_json(results, file_name='bias_analysis_results.json', output_dir='../results/'):
+def save_results_to_json(results, file_name='bias_analysis_results.json', base_output_dir='../results/', output_dir=None):
     # Ensure the output directory exists
+    if output_dir is None:
+        output_dir = '../results/'
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -478,6 +483,11 @@ def save_results_to_json(results, file_name='bias_analysis_results.json', output
 
 # Main function
 def main():
+    # Create the results folder at the beginning of the experiment
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    results_dir = os.path.join('../results', f'results_{current_time}')
+    os.makedirs(results_dir, exist_ok=True)
+
     # Load model configurations from JSON
     config_path = os.path.join('..', 'config', 'models_config_test.json')  # Adjust the path as needed
     models_config = load_model_configs(config_path)
@@ -547,12 +557,12 @@ def main():
             print(f"Skipping model {model_name}: provider {model_config['provider']} not supported.")
 
     # Save all results to a JSON file
-    save_results_to_json(all_results)
+    save_results_to_json(all_results, output_dir=results_dir)
 
     # Plot bias comparison for the model
     #plot_bias_comparison(all_results)
-    plot_diverging_bias_comparison(all_results)
-    plot_point_estimates_with_error_bars(all_results)
+    plot_diverging_bias_comparison(all_results, output_dir=results_dir)
+    plot_point_estimates_with_error_bars(all_results, output_dir=results_dir)
 
 
 if __name__ == "__main__":
