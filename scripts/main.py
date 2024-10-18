@@ -103,14 +103,13 @@ def fetch_embeddings(model_config, texts):
     model_name = model_config['model_name']
     api_key = model_config.get('api_key_env')
 
-    if provider == 'Cohere':
+    if provider == 'OpenAI':
+        return get_embeddings_openai(model_name, texts, api_key)
+    elif provider == 'Cohere':
         cohere_client = cohere.Client(api_key)  # Initialize the Cohere client with the API key from the config
         return get_embeddings_cohere(model_name, texts, cohere_client)
-    elif provider == 'Jina':
-        # Call Jina API to get embeddings
-        return get_embeddings_jina(model_config, texts, api_key)
-    elif provider == 'OpenAI':
-        return get_embeddings_openai(model_name, texts, api_key)
+    #elif provider == 'Jina':
+    #    return get_embeddings_jina(model_config, texts, api_key)
     elif provider == 'Voyage':
         voyage_client = voyageai.Client(api_key)  # Initialize the Voyage client with the API key
         return get_embeddings_voyage(model_name, texts, voyage_client)
@@ -119,7 +118,7 @@ def fetch_embeddings(model_config, texts):
         return []
 
 # Analyze embedding bias for a single model and bias type
-def analyze_embedding_bias(model_name, model_config, bias_type, attribute_templates, attribute_pairs, folder_name='gender_bias_testing'):
+def analyze_embedding_bias(model_name, model_config, bias_type, attribute_templates, attribute_pairs, folder_name='gender_bias_testing2'):
     print(f"Analyzing bias for model: {model_name}, bias type: {bias_type}")
 
     base_path = os.path.join('..', 'word_lists', folder_name)
@@ -181,7 +180,7 @@ def compute_effect_size(association_tar1, association_tar2):
     return effect_size
 
 # Function to perform permutation testing
-def permutation_test(association_tar1, association_tar2, num_permutations=10000):
+def permutation_test(association_tar1, association_tar2, num_permutations):
     combined = np.concatenate((association_tar1, association_tar2))
     size_tar1 = len(association_tar1)
     observed_effect_size = compute_effect_size(association_tar1, association_tar2)
@@ -221,7 +220,7 @@ def print_effect_size_result(effect_size, p_value, model_name, bias_type):
     print(f"Direction of Bias: {direction}")
 
 # Function to perform SEAT test with permutation testing
-def perform_seat_test_with_permutation(embeddings_data, attribute_pairs, num_permutations=10000):
+def perform_seat_test_with_permutation(embeddings_data, attribute_pairs, num_permutations):
     results = {}
 
     # Iterate over attribute pairs
@@ -254,46 +253,6 @@ def perform_seat_test_with_permutation(embeddings_data, attribute_pairs, num_per
 
     return results
 
-# Function to create a bar chart showing the effect sizes (biases)
-def plot_bias_comparison(results):
-    models = list(results.keys())
-    bias_pairs = list(next(iter(results.values())).keys())
-
-    # Number of models and attribute pairs
-    n_models = len(models)
-    n_pairs = len(bias_pairs)
-
-    # Set up the bar width and positions
-    bar_width = 0.2
-    index = np.arange(n_pairs)
-
-    # Create the bar plot
-    plt.figure(figsize=(14, 8))
-
-    for i, (model_name, results) in enumerate(results.items()):
-        effect_sizes = [results[bias_pair]['effect_size'] for bias_pair in bias_pairs]
-        p_values = [results[bias_pair]['p_value'] for bias_pair in bias_pairs]
-
-        # Offset the positions of the bars for each model
-        plt.bar(index + i * bar_width, effect_sizes, bar_width, label=f'{model_name}')
-
-        # Add p-value annotations for each model
-        for j, (es, p_value) in enumerate(zip(effect_sizes, p_values)):
-            plt.text(index[j] + i * bar_width, es, f'p={p_value:.4f}', ha='center', va='bottom', fontsize=8)
-
-    # Labeling
-    plt.xlabel('Effect Size (Cohensd) \n Positive: Bias Towards Males with Career; Negative: Bias Towards Females with Career')
-    plt.ylabel('Effect Size (Bias Level)')
-    plt.title('Bias Comparison for All Models')
-    plt.xticks(index + bar_width * (n_models - 1) / 2, bias_pairs, rotation=45, ha='right')
-    plt.axhline(0, color='black', linewidth=0.8)
-    plt.legend()
-    plt.tight_layout()
-
-    # Show and save the plot
-    results_dir = os.path.join('..', 'results/')
-    plt.savefig(results_dir + 'combined_bias_comparison_plot.png')
-    plt.show()
 
 # Function to create a diverging bar chart showing the effect sizes (biases)
 def plot_diverging_bias_comparison(results, output_dir='../results/'):
@@ -345,12 +304,12 @@ def plot_diverging_bias_comparison(results, output_dir='../results/'):
         axes[i].axvline(0, color='blue', linewidth=2)  # Draw the central axis with a thicker blue line
 
         # Add vertical threshold lines
-        axes[i].axvline(0.2, color='black', linestyle='--', linewidth=1, label='Small Bias Threshold')
+        axes[i].axvline(0.2, color='black', linestyle='--', linewidth=1, label='Small Bias Threshold: green')
         axes[i].axvline(-0.2, color='black', linestyle='--', linewidth=1)
-        axes[i].axvline(0.5, color='black', linestyle='-.', linewidth=1, label='Medium Bias Threshold')
-        axes[i].axvline(-0.5, color='black', linestyle='-.', linewidth=1)
-        axes[i].axvline(0.8, color='black', linestyle=':', linewidth=1, label='Large Bias Threshold')
-        axes[i].axvline(-0.8, color='black', linestyle=':', linewidth=1)
+        axes[i].axvline(0.5, color='orange', linestyle='-.', linewidth=1, label='Medium Bias Threshold: orange')
+        axes[i].axvline(-0.5, color='orange', linestyle='-.', linewidth=1)
+        axes[i].axvline(0.8, color='red', linestyle=':', linewidth=1, label='Large Bias Threshold: red')
+        axes[i].axvline(-0.8, color='red', linestyle=':', linewidth=1)
 
         # Update the title based on the attribute pair
         axes[i].set_title(
@@ -360,10 +319,13 @@ def plot_diverging_bias_comparison(results, output_dir='../results/'):
         # Add labels and title for leadership/support
         if "leadership" in attr_pair.lower():
             axes[i].set_title(
-                f"Negative Values → Bias Associating Females with 'Leadership' over 'Support '  \n Negative Values → Bias Associating Females with 'Leadership' over 'Support' ",
+                f"Positive Values → Bias Associating Males with 'Leadership' over 'Support '  \n Negative Values → Bias Associating Females with 'Leadership' over 'Support' ",
                 fontsize=14)
 
-
+        elif "intelligence" in attr_pair.lower():
+            axes[i].set_title(
+                f"Positive Values → Bias Associating Males with 'Intelligence' over 'Physical appearance '  \n Negative Values → Bias Associating Females with 'Intelligence' over 'Physical appearance' ",
+                fontsize=14)
 
         # Set limits for better visualization
         axes[i].set_xlim([-1.0, 1.0])
@@ -443,8 +405,7 @@ def plot_point_estimates_with_error_bars(results, output_dir='../results/'):
         # Save and show the plot
         plt.tight_layout()
 
-
-        output_file = os.path.join(output_dir, '_combined_point_estimate_plot.png')
+        output_file = os.path.join(output_dir, f'{bias_pair}_combined_point_estimate_plot.png')
         plt.savefig(output_file, bbox_inches='tight')
         plt.show()
 
@@ -508,7 +469,7 @@ def main():
     attribute_pairs = [
         ('career', 'family'),
         ('leadership', 'support'),
-        #('physical_appearance', 'intelligence'),
+        ('intelligence', 'physical_appearance'),
         #('agentic', 'communal'),
         #('logical', 'emotional'),
         # Add more pairs as needed
@@ -522,15 +483,15 @@ def main():
     print("------------------------------------------------\n")
 
     # Number of permutations for permutation testing
-    #num_permutations = 10000
-    num_permutations = 100 # testing
+    num_permutations = 10000
+    #num_permutations = 100 # testing
 
     # Store all results for each model
     all_results = {}
 
     # Loop through each model in the config
     for model_name, model_config in models_config.items():
-        if model_config['provider'] in ['Voyage']:#'Cohere', 'Voyage', 'OpenAI']:
+        if model_config['provider'] in  ['OpenAI', 'Voyage', 'Cohere']:
             # Analyze embedding bias for the selected bias type
             embeddings_data = analyze_embedding_bias(
                 model_name,

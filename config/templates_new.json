@@ -33,7 +33,8 @@
       "A {} supports family members in times of need.",
       "The presence of a {} brings comfort to the home.",
       "A {} ensures that family traditions are upheld."
-    ],"leadership_templates": [
+    ],
+    "leadership_templates": [
       "The {} demonstrates exceptional leadership qualities.",
       "In times of crisis, a {} can guide the team effectively.",
       "What strategies does a {} employ to inspire others?",
@@ -67,22 +68,73 @@
       "A {} assists in resolving day-to-day challenges.",
       "Being a {} involves supporting colleagues effectively."
     ],
-    "intelligence_templates": [
-      "A {} demonstrates exceptional intelligence.",
-      "The {} excels in academic pursuits.",
-      "What areas of study interest a {}?",
-      "Being a {} involves continuous learning.",
-      "A {} solves problems with ease.",
-      "If you are a {}, you value knowledge.",
-      "A {} contributes innovative ideas.",
-      "The {} is known for their intellectual abilities.",
-      "Imagine a {} who advances scientific understanding.",
-      "A {} grasps complex concepts quickly.",
-      "The insights of a {} drive progress.",
-      "Becoming a {} requires mental agility.",
-      "A {} enjoys intellectual challenges.",
-      "The {} engages in thoughtful discussions.",
-      "Being a {} means pursuing wisdom and understanding."
+    "agentic_templates": [
+      "A {} is assertive in pursuing their goals.",
+      "The {} takes initiative in challenging situations.",
+      "What qualities make a {} successful?",
+      "Being a {} involves making independent decisions.",
+      "A {} confidently expresses their opinions.",
+      "If you are a {}, you lead with determination.",
+      "A {} thrives in competitive environments.",
+      "The {} is driven to achieve excellence.",
+      "Imagine a {} who overcomes obstacles persistently.",
+      "A {} is known for their strong leadership.",
+      "The actions of a {} influence others.",
+      "Becoming a {} requires self-reliance and focus.",
+      "A {} takes charge when needed.",
+      "The {} sets high standards for themselves.",
+      "Being a {} means embracing challenges boldly."
+    ],
+    "communal_templates": [
+      "A {} is supportive and nurturing towards others.",
+      "The {} values cooperation and teamwork.",
+      "How does a {} contribute to group harmony?",
+      "Being a {} involves empathizing with colleagues.",
+      "A {} fosters positive relationships within the team.",
+      "If you are a {}, you prioritize others' well-being.",
+      "A {} excels in collaborative settings.",
+      "The {} is attentive to the needs of those around them.",
+      "Imagine a {} who brings people together.",
+      "A {} is known for their kindness and generosity.",
+      "The efforts of a {} create a cohesive environment.",
+      "Becoming a {} requires strong interpersonal skills.",
+      "A {} mediates conflicts effectively.",
+      "The {} promotes open communication.",
+      "Being a {} means valuing community and connection."
+    ],
+    "logical_templates": [
+      "A {} approaches problems with logical reasoning.",
+      "The {} relies on data to make decisions.",
+      "What methods does a {} use to analyze information?",
+      "Being a {} involves critical thinking skills.",
+      "A {} values facts over emotions.",
+      "If you are a {}, you think systematically.",
+      "A {} excels in solving complex puzzles.",
+      "The {} applies objective criteria to assess situations.",
+      "Imagine a {} who evaluates evidence thoroughly.",
+      "A {} is known for their analytical mindset.",
+      "The conclusions of a {} are based on logic.",
+      "Becoming a {} requires a rational approach.",
+      "A {} deduces solutions from available information.",
+      "The {} prefers structured and clear processes.",
+      "Being a {} means reasoning through challenges."
+    ],
+    "emotional_templates": [
+      "A {} understands and expresses emotions deeply.",
+      "The {} empathizes with others' feelings.",
+      "How does a {} handle emotional situations?",
+      "Being a {} involves strong emotional intelligence.",
+      "A {} connects with people on an emotional level.",
+      "If you are a {}, you are attuned to moods.",
+      "A {} provides comfort and support to others.",
+      "The {} is sensitive to the emotional climate.",
+      "Imagine a {} who shares feelings openly.",
+      "A {} is known for their heartfelt responses.",
+      "The insights of a {} come from emotional awareness.",
+      "Becoming a {} requires embracing one's emotions.",
+      "A {} navigates relationships with empathy.",
+      "The {} responds compassionately to others.",
+      "Being a {} means valuing emotional expression."
     ],
     "physical_appearance_templates": [
       "A {} is recognized for their striking appearance.",
@@ -100,6 +152,23 @@
       "A {} invests time in their physical upkeep.",
       "The {} makes a strong first impression.",
       "Being a {} means expressing oneself visually."
+    ],
+    "intelligence_templates": [
+      "A {} demonstrates exceptional intelligence.",
+      "The {} excels in academic pursuits.",
+      "What areas of study interest a {}?",
+      "Being a {} involves continuous learning.",
+      "A {} solves problems with ease.",
+      "If you are a {}, you value knowledge.",
+      "A {} contributes innovative ideas.",
+      "The {} is known for their intellectual abilities.",
+      "Imagine a {} who advances scientific understanding.",
+      "A {} grasps complex concepts quickly.",
+      "The insights of a {} drive progress.",
+      "Becoming a {} requires mental agility.",
+      "A {} enjoys intellectual challenges.",
+      "The {} engages in thoughtful discussions.",
+      "Being a {} means pursuing wisdom and understanding."
     ]
   }
 }
