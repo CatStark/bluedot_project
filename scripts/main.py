@@ -118,7 +118,7 @@ def fetch_embeddings(model_config, texts):
         return []
 
 # Analyze embedding bias for a single model and bias type
-def analyze_embedding_bias(model_name, model_config, bias_type, attribute_templates, attribute_pairs, folder_name='gender_bias_testing2'):
+def analyze_embedding_bias(model_name, model_config, bias_type, attribute_templates, attribute_pairs, folder_name='gender_bias_testing'):
     print(f"Analyzing bias for model: {model_name}, bias type: {bias_type}")
 
     base_path = os.path.join('..', 'word_lists', folder_name)
@@ -356,58 +356,71 @@ def plot_diverging_bias_comparison(results, output_dir='../results/'):
 def plot_point_estimates_with_error_bars(results, output_dir='../results/'):
     import matplotlib.pyplot as plt
     import numpy as np
+    import os
 
-    # Create a plot for each attribute pair (e.g., Career vs Family, Leadership vs Support)
+    # Create a plot for each attribute pair
     for bias_pair in next(iter(results.values())).keys():
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
 
-        # Initialize lists to store data
+        # Initialize lists
         effect_sizes = []
-        confidence_intervals = []
+        lower_errors = []
+        upper_errors = []
         model_labels = []
 
-        # Extract effect sizes and calculate confidence intervals for each model
+        # Extract data for each model
         for model_name, model_results in results.items():
             result = model_results[bias_pair]
             effect_size = result['effect_size']
-            p_value = result['p_value']  # Assuming p-value was already calculated
+            permuted_effect_sizes = result['permuted_effect_sizes']
 
-            # Assuming a fixed standard error for CI calculation
-            # Replace with real standard error if available from permutation test
-            confidence_interval = 1.96 * 0.1  # Replace 0.1 with the real standard error if available
+            # Calculate empirical confidence intervals
+            ci_lower = np.percentile(permuted_effect_sizes, 2.5)
+            ci_upper = np.percentile(permuted_effect_sizes, 97.5)
 
+            # Calculate errors, ensuring they are non-negative
+            lower_error = effect_size - ci_lower
+            upper_error = ci_upper - effect_size
+
+            # If errors are negative, set them to zero
+            if lower_error < 0:
+                lower_error = 0
+            if upper_error < 0:
+                upper_error = 0
+
+            # Append data
             effect_sizes.append(effect_size)
-            confidence_intervals.append(confidence_interval)
+            lower_errors.append(lower_error)
+            upper_errors.append(upper_error)
             model_labels.append(model_name)
 
-        # Convert lists to numpy arrays for easier plotting
+        # Convert to numpy arrays
         effect_sizes = np.array(effect_sizes)
-        confidence_intervals = np.array(confidence_intervals)
+        yerr = np.array([lower_errors, upper_errors])
 
-        # Plotting the point estimates with error bars (95% CI)
-        ax.errorbar(model_labels, effect_sizes, yerr=confidence_intervals, fmt='o', capsize=5, capthick=2, color='blue',
-                    label="Effect Size (Cohen's d)")
+        # Plotting
+        ax.errorbar(model_labels, effect_sizes, yerr=yerr, fmt='o', capsize=5, capthick=2, color='blue')
 
-        # Horizontal line at y = 0 for visual reference (no bias)
+        # Reference line at y=0
         ax.axhline(0, color='red', linestyle='--', linewidth=1.5)
 
         # Labels and title
         ax.set_ylabel("Effect Size (Cohen's d)")
         ax.set_xlabel("Models")
-        ax.set_title(f"{bias_pair.replace('_', ' ').title()} Bias: Point Estimates with 95% Confidence Intervals")
+        ax.set_title(f"{bias_pair.replace('_', ' ').title()} Bias: Effect Sizes with 95% Confidence Intervals")
 
-        # Rotate model labels on x-axis for better readability
+        # Rotate x-axis labels
         plt.xticks(rotation=45, ha='right')
 
-        # Display grid for better readability
+        # Grid for readability
         ax.grid(True, linestyle='--', alpha=0.7)
 
-        # Save and show the plot
+        # Adjust layout and save
         plt.tight_layout()
-
-        output_file = os.path.join(output_dir, f'{bias_pair}_combined_point_estimate_plot.png')
+        output_file = os.path.join(output_dir, f'{bias_pair}_point_estimate_plot.png')
         plt.savefig(output_file, bbox_inches='tight')
         plt.show()
+
 
 # Helper function to convert numpy arrays to lists for JSON serialization
 def convert_numpy_to_list(data):
@@ -450,7 +463,7 @@ def main():
     os.makedirs(results_dir, exist_ok=True)
 
     # Load model configurations from JSON
-    config_path = os.path.join('..', 'config', 'models_config_test.json')  # Adjust the path as needed
+    config_path = os.path.join('..', 'config', 'models_config.json')  # Adjust the path as needed
     models_config = load_model_configs(config_path)
 
     # Load templates from the JSON file
@@ -483,8 +496,8 @@ def main():
     print("------------------------------------------------\n")
 
     # Number of permutations for permutation testing
-    num_permutations = 10000
-    #num_permutations = 100 # testing
+    #num_permutations = 10000
+    num_permutations = 100 # testing
 
     # Store all results for each model
     all_results = {}
