@@ -44,32 +44,34 @@ This is the approach:
 - **Target Words** (`target_words_male.txt`, `target_words_female.txt`, etc ):
   - Male Terms: Words like 'he', 'him', 'his', 'man', 'boy', 'male', etc. 
   - Female Terms: Words like 'she', 'her', 'hers', 'woman', 'girl', 'female', etc. 
-  - **Attribute Words** (`attribute_words_career.txt`,attribute_words_family.txt`, etc) :
+  - **Attribute Words** (`attribute_words_career.txt`,`attribute_words_family.txt`, etc) :
     - Attribute Groups: 'career', 'family', 'leadership', 'support', 'intelligence', 'physical_appearance'. 
-      - Each attribute group has its own list of associated words (e.g., 'career' might include 'engineer', 'doctor', 'lawyer'). 
+      - Each attribute group has its own list of associated words (e.g., `attribute_words_career.txt` might include 'engineer', 'doctor', 'lawyer'). 
 - **Templates**: (`templates.json`): Templates are sentences with placeholders ("The role of a {} is crucial") where target or attribute words will be inserted. 
 ### 2. Generating Sentences
-We generate two types of sentences:
+The script generates two types of sentences:
 
-1. **Target Sentences**
-    - **Purpose**: To provide contextual embeddings for **target words** (e.g., male and female terms) across various bias domains.
+1. **Target Sentences**: To provide embeddings for **target words** (male and female) across various bias domains.
     - **Generation Method**:
         - **Target Words**: Words like 'he', 'she', 'man', 'woman', etc.
-        - **Templates**: **All templates from all attribute categories** are combined.
-        - **Process**: Each target word is inserted into every template from every attribute category.
-    - **Example**:
-        - For the target word **'he'**:
-            - "The role of a **man** is crucial in any home."
-            - "**he** demonstrates exceptional leadership qualities."
-            - "What defines the attractiveness of a **man**?"
-            - *(Using templates from 'career', 'leadership', 'intelligence', etc.)*
-        - For the target word **'she'**:
-            - "The role of a **woman** is crucial in any home."
-            - "**she** demonstrates exceptional leadership qualities."
-            - "What defines the attractiveness of a **woman**?"
-            - *(Using the same templates as above)*
-2. **Attribute Sentences**
-    - **Purpose**: To provide contextual embeddings for **attribute words**, specific to their bias category.
+        - **Process**: Each target word is inserted into every template from every attribute category. So  All templates from all attribute categories are combined.
+    - <details>
+        <summary>Example</summary>
+        
+        - **Example**:
+           - For the target word **'man'**:
+               - "The role of a **man** is crucial in any home."
+               - "**man** demonstrates exceptional leadership qualities."
+               - "What defines the attractiveness of a **man**?"
+               - *(Using templates from 'career', 'leadership', 'intelligence', etc.)*
+           - For the target word **'woman'**:
+               - "The role of a **woman** is crucial in any home."
+               - "**woman** demonstrates exceptional leadership qualities."
+               - "What defines the attractiveness of a **woman**?"
+               - *(Using the same templates as above)*
+    </details>
+    
+2. **Attribute Sentences**: To provide embeddings for **attribute words**, specific to their bias category.
     - **Generation Method**:
         - **Attribute Words**: Words specific to each attribute category (e.g., 'engineer' for 'career', 'beautiful' for 'physical_appearance').
         - **Templates**: Templates specific to each attribute category.
@@ -102,8 +104,8 @@ Suppose we have the following embeddings:
      - Embedding vector $T: [0.2, 0.5, 0.1]$
    - Attribute word: "nurse"
      - Embedding vector $A: [0.3, 0.4, 0.2]$
-2. Calculate Cosine Similarity: $$ Cosine Similarity = { T⋅A \over ∥T∥×∥A∥  } $$
-  Cosine Similarity between "she" and "nurse": $0.9487$ 
+2. Calculate Cosine Similarity: $$Cosine Similarity = { T⋅A \over ∥T∥×∥A∥  }$$
+  - Cosine Similarity between "she" and "nurse": $0.9487$ 
 3. Repeat for all words: This would happen also for 'he' and 'nurse' e.g.: Cosine Similarity between "he" and "nurse": $0.7394$
 
 </details>
@@ -171,7 +173,7 @@ where:
     - Suppose we get an average cosine similarity of **0.75**.
 - **Average Similarity of 'he' with Family:**
     - Suppose we get an average cosine similarity of **0.65**.
-- **Association Score** for 'he': $$ Association Score(he) = 0.75−0.65 = 0.10 $$
+- **Association Score** for 'he': $$Association Score(he) = 0.75−0.65 = 0.10$$
 
 Repeat this process for each target word.
 
@@ -188,13 +190,13 @@ Repeat this process for each target word.
 ### Calculating Effect Size
 
 **Means:**
-- Mean for Male terms (X1):   $$X1 = {0.10 +0.12 \over 2 } = 0.11 $$
-- Mean for Female terms (X1): $$X2 = {0.08 + (-0.0.7 \over 2 } =- 0.075 $$
+- Mean for Male terms (X1):   $$X1 = {0.10 +0.12 \over 2 } = 0.11$$
+- Mean for Female terms (X1): $$X2 = {0.08 + (-0.0.7 \over 2 } =- 0.075$$
 
 **Pooled Standard Deviation (Sp)**: Calculate the standard deviation for each group and then compute the pooled standard deviation.
-**Cohen's d:** $$ d = {0.11 - (-0.075) \over  Sp} ={ 0.185 \over Sp}$$
+**Cohen's d:** $$d = {0.11 - (-0.075) \over  Sp} ={ 0.185 \over Sp}$$
  
-Assuming $Sp = 0.05$, then $$d = {0.185 \over 0.05} = 3.7 $$ 
+Assuming $Sp = 0.05$, then $$d = {0.185 \over 0.05} = 3.7$$ 
 An effect size of 3.7 indicates a very large bias.
 
 ### Interpreting the Results
