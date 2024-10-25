@@ -71,7 +71,7 @@ The script generates two types of sentences:
                - *(Using the same templates as above)*
     </details>
     
-2. **Attribute Sentences**: To provide embeddings for **attribute words**, specific to their bias category.
+2. **Attribute Sentences**: To provide embeddings for **attribute words** (leadership, support, intelligence, etc), specific to their bias category.
     - **Generation Method**:
         - **Attribute Words**: Words specific to each attribute category (e.g., 'engineer' for 'career', 'beautiful' for 'physical_appearance').
         - **Templates**: Templates specific to each attribute category.
@@ -100,147 +100,92 @@ Once we have the embeddings, we can start the bias analysis
 Suppose we have the following embeddings:
 
 1. Get embeddings: 
-   - Target word: "she"
-     - Embedding vector $T: [0.2, 0.5, 0.1]$
-   - Attribute word: "nurse"
-     - Embedding vector $A: [0.3, 0.4, 0.2]$
-2. Calculate Cosine Similarity: $$Cosine Similarity = { T⋅A \over ∥T∥×∥A∥  }$$
-  - Cosine Similarity between "she" and "nurse": $0.9487$ 
-3. Repeat for all words: This would happen also for 'he' and 'nurse' e.g.: Cosine Similarity between "he" and "nurse": $0.7394$
+
+| **Target Word** | **Engineer** | **Doctor** |
+| --- | --- | --- |
+| he | 0.80 | 0.82 |
+| man | 0.78 | 0.81 |
+| she | 0.65 | 0.68 |
+| woman | 0.66 | 0.69 |
+
+| **Target Word** | **Parent** | **Caregiver** |
+| --- | --- | --- |
+| he | 0.70 | 0.72 |
+| man | 0.68 | 0.71 |
+| she | 0.85 | 0.88 |
+| woman | 0.86 | 0.87 |
+
 
 </details>
 
 ### 4.2 Association Scores
 
 - **Computation**: For each target word embedding, the script calculates two association scores:
-    - The mean cosine similarity with attribute group 1 (e.g., career terms).
-    - The mean cosine similarity with attribute group 2 (e.g., family terms).
-  - **Association Difference**: The difference between these two means provides the association score for that target word:
+    - The mean cosine similarity of Target word (he, she) with attribute group 1 (e.g., career terms).
+    - The mean cosine similarity of Target word (he, she) with attribute group 2 (e.g., family terms).
+    - <details>
+    <summary>Example</summary>
+    
+  Mean Similarity with Career Attributes: $$Mean(career,he) = {0.80=0.82\over2}=0.81$$ $$Mean(family,he) = {0.70=0.72\over2}=0.71$$ 
   
-    - Association Score= Mean Similarity with Attribute Group 1 (e.g. career) − Mean Similarity with Attribute Group 2(e.g. family) 
+    </details>
+    
+
+- **Association Difference**: The difference between these two means provides the association score for that target word:
+  
+  - Association Score= $$Mean Similarity of Target word (e.g. he, she) with Attribute Group 1 (e.g. career) − Mean Similarity of Target word (e.g. he, she) with Attribute Group 2(e.g. family)$$
+  - <details>
+    <summary>Example</summary>
+    
+    For he: $$AssociationScore(he) = 0.81-0.71=0.10$$ 
+  
+    </details>
 
 ### 4.3 Effect Size (Cohen's d)
 
-- **Definition**: Cohen's d describes the standardized difference between two means 
-- **Computation**: The effect size is calculated using the association scores of two target groups (e.g., male and female).
-- **Formula**: $$ d = {X1−X2 \over Sp} $$
+Cohen's d is a measure of the standardized difference between two means, commonly used to indicate the size of an effect or bias.
+- **Formula**: $$d = {X1−X2 \over Sp}$$
 where:
   - $X1$ Collect all association scores for male target words and compute their mean
   - $X2$ Collect all association scores for female target words and compute their mean
   - $P$ is the pooled standard deviation
 
-<details>
-<summary>Example</summary>
-
-### Dummy data:
-1. Target Words:
-    - Male Terms: 'he', 'man'
-    - Female Terms: 'she', 'woman'
-2. Attribute Words:
-    - Attribute Group 1 (Career): 'engineer', 'doctor'
-    - Attribute Group 2 (Family): 'parent', 'caregiver'
-
-### **Generating Sentences:**
-
-**Target Sentences for 'he':**
-
-- "The role of a **man** is crucial in any home." (career group)
-- "**he** demonstrates exceptional leadership qualities." (leadership group)
-- "What defines the attractiveness of a **man**?" (physical appareance group)
-- (and so on, using all templates)
-
-**Attribute Sentences for 'engineer' (Career):**
-
-- "The role of a **engineer** is crucial in any organization."
-- "A **manager** is known for their problem-solving abilities."
-- (using 'career_templates')
-
-**Attribute Sentences for 'parent' (Family):**
-
-- "The commitment of a **parent** enhances the stability of the household."
-- "A **sibiling** plays a key part in the upbringing and education of children."
-- (using 'family_templates')
-
-### **Computing Cosine Similarities:**
-
-- **For each target sentence embedding**, compute cosine similarities with each **attribute sentence embedding** in:
-    - **Attribute Group 1 (Career)**
-    - **Attribute Group 2 (Family)**
-
-### **Calculating Association Scores:**
-
-- **Average Similarity of 'he' with Career:**
-    - Suppose we get an average cosine similarity of **0.75**.
-- **Average Similarity of 'he' with Family:**
-    - Suppose we get an average cosine similarity of **0.65**.
-- **Association Score** for 'he': $$Association Score(he) = 0.75−0.65 = 0.10$$
-
-Repeat this process for each target word.
-
-### Compiling Association Scores
-
-- **Male Target Words**:
-  - 'he': 0.10
-  - 'man': 0.12
-
-- **Female Target Words:**
-  - 'she': -0.08
-  - 'woman': -0.07 
-
-### Calculating Effect Size
-
-**Means:**
-- Mean for Male terms (X1):   $$X1 = {0.10 +0.12 \over 2 } = 0.11$$
-- Mean for Female terms (X1): $$X2 = {0.08 + (-0.0.7 \over 2 } =- 0.075$$
-
-**Pooled Standard Deviation (Sp)**: Calculate the standard deviation for each group and then compute the pooled standard deviation.
-**Cohen's d:** $$d = {0.11 - (-0.075) \over  Sp} ={ 0.185 \over Sp}$$
- 
-Assuming $Sp = 0.05$, then $$d = {0.185 \over 0.05} = 3.7$$ 
-An effect size of 3.7 indicates a very large bias.
-
-### Interpreting the Results
-**Direction of Bias:**
-- Positive Effect Size: Indicates that male terms are more associated with career attributes than female terms.
-
-**Magnitude of Bias:**
-- An effect size greater than 0.8 is considered large.
-</details>
-
 
 ### 4.4 Permutation Testing and P-Value
 
-- **Purpose**: To determine if the observed effect size is statistically significant—that is, whether the bias observed is unlikely to have occurred by random chance.
-- **Methodology**:
-    1. **Permutation**: The association scores from both target groups are combined into a single dataset. This combined dataset is then randomly shuffled many times (e.g., 10,000 permutations).
-    2. **Effect Size Distribution**: For each permutation, the effect size (Cohen's d) is recalculated. This process generates a distribution of effect sizes that represent what we might expect to observe if there were no actual bias (the null hypothesis).
-    3. **P-Value Computation**: The p-value is calculated as the proportion of permuted effect sizes that are equal to or more extreme than the observed effect size. A low p-value indicates that the observed effect size is unlikely to have occurred by chance, suggesting a statistically significant bias.
-- **Interpretation of P-Value**:
-    - **p ≤ 0.05**: The observed bias is statistically significant. There is strong evidence against the null hypothesis (no bias).
-    - **p > 0.05**: The observed bias is not statistically significant. There is insufficient evidence to conclude that a real bias exists.
+To determine if the observed effect size is statistically significant—that is, whether the bias observed is unlikely to have occurred by random chance.
+
+**Methodology**:
+1. **Permutation**: The association scores from both target groups are combined into a single dataset. This combined dataset is then randomly shuffled 10,000 times.
+2. **Effect Size Distribution**: For each permutation, the effect size (Cohen's d) is recalculated. This process generates a distribution of effect sizes that represent what we might expect to observe if there were no actual bias (the null hypothesis).
+3. **P-Value Computation**: The p-value is calculated as the proportion of permuted effect sizes that are equal to or more extreme than the observed effect size. A low p-value indicates that the observed effect size is unlikely to have occurred by chance, suggesting a statistically significant bias.
+
+**Interpretation of P-Value**:
+- **p ≤ 0.05**: The observed bias is statistically significant. There is strong evidence against the null hypothesis (no bias).
+- **p > 0.05**: The observed bias is not statistically significant. There is insufficient evidence to conclude that a real bias exists.
 
 ### 4.5 Interpreting Effect Size
 
-- **Interpretation**: Based on the magnitude of Cohen's d, the script categorizes the level of bias.
-    - **Negligible/No Bias**: 0.0≤∣d∣<0.2
-        
-        0.0≤∣d∣<0.20.0 \leq |d| < 0.2
-        
-    - **Small Bias**: 0.2≤∣d∣<0.5
-        
-        0.2≤∣d∣<0.50.2 \leq |d| < 0.5
-        
-    - **Medium Bias**: 0.5≤∣d∣<0.8
-        
-        0.5≤∣d∣<0.80.5 \leq |d| < 0.8
-        
-    - **Large Bias**: ∣d∣≥0.8
-        
-        ∣d∣≥0.8|d| \geq 0.8
-        
-- **Direction of Bias**:
-    - **Positive Effect Size**: Indicates that the first target group (e.g., male terms) is more closely associated with the first attribute group (e.g., career) compared to the second target group (e.g., female terms).
-    - **Negative Effect Size**: Indicates that the second target group (e.g., female terms) is more closely associated with the first attribute group compared to the first target group.
+**Interpretation Scale**:
+
+  - **Negligible/No Bias**: $0.0≤∣d∣<0.2$
+  - **Small Bias**: $0.2≤∣d∣<0.5$
+  - **Medium Bias**: $0.5≤∣d∣<0.8$
+  - **Large Bias**: $∣d∣≥0.8$
+
+**Understanding the Direction of Bias**:
+  - **Positive Effect Size**: Indicates that the first target group (e.g., male terms) is more closely associated with the first attribute group (e.g., career) compared to the second target group (e.g., female terms).
+  - **Negative Effect Size**: Indicates that the second target group (e.g., female terms) is more closely associated with the first attribute group compared to the first target group.
+
+
+
+**Interpreting Confidence Intervals**:  
+To provide a range within which the true effect size is likely to fall, this offers insight into the precision of the estimated effect size.
+
+
+- **95% Confidence Interval (CI)**: There is a 95% chance that the true effect size lies within this interval.
+- **Confidence Interval Not Including Zero**: Suggests that the effect size is statistically significant.
+- **Confidence Interval Including Zero**: Suggests that the effect size may not be statistically significant.
 
 ### 5. Visualization
 
@@ -264,50 +209,6 @@ An effect size of 3.7 indicates a very large bias.
 3. **Effect Size (Cohen's d)**: Standardized measure of bias magnitude.
 4. **P-Value**: Probability of observing the effect size under the null hypothesis (no bias).
 
-## Understanding the Statistical Measures
-
-### Cohen's d
-
-- **Purpose**: Quantifies the difference between two groups in terms of standard deviation units.
-- **Interpretation**:
-    - **Negligible/No Bias**: 0.0≤∣d∣<0.2
-        
-        0.0≤∣d∣<0.20.0 \leq |d| < 0.2
-        
-    - **Small Bias**: 0.2≤∣d∣<0.5
-        
-        0.2≤∣d∣<0.50.2 \leq |d| < 0.5
-        
-    - **Medium Bias**: 0.5≤∣d∣<0.8
-        
-        0.5≤∣d∣<0.80.5 \leq |d| < 0.8
-        
-    - **Large Bias**: ∣d∣≥0.8
-        
-        ∣d∣≥0.8|d| \geq 0.8
-        
-- **Significance**: A larger absolute value of Cohen's d indicates a greater bias.
-
-### P-Value
-
-- **Definition**: The probability of obtaining an effect size as extreme as the observed one, assuming the null hypothesis is true.
-- **Permutation Testing**: By simulating the null distribution through permutations, we obtain a more accurate p-value without relying on parametric assumptions.
-- **Interpretation**:
-    - **Low P-Value (p≤0.05p \leq 0.05p≤0.05)**: Indicates that the observed bias is statistically significant.
-    - **High P-Value (p>0.05p > 0.05p>0.05)**: Suggests that the observed bias could be due to chance.
-
-## Interpreting the Results
-
-Understanding the results of bias analysis is crucial for drawing meaningful conclusions and making informed decisions. This section provides detailed explanations of the statistical methods used and guides you on how to interpret the outputs generated by the script.
-
-### Confidence Intervals
-
-- **Purpose**: To provide a range within which the true effect size is likely to fall, offering insight into the precision of the estimated effect size.
-- **Calculation**: Confidence intervals are derived from the distribution of effect sizes obtained through permutation testing.
-- **Interpreting Confidence Intervals**:
-    - **95% Confidence Interval (CI)**: There is a 95% chance that the true effect size lies within this interval.
-    - **Confidence Interval Not Including Zero**: Suggests that the effect size is statistically significant.
-    - **Confidence Interval Including Zero**: Suggests that the effect size may not be statistically significant.
 
 ### General Interpretation Guidelines
 
