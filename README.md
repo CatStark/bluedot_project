@@ -1,31 +1,6 @@
 # Bias Analysis of Word Embeddings in Language Models
 
 
-## Table of Contents
-
-- [Overview](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-- [Design and Methodology](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [1. Loading Configurations and Data](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [2. Generating Sentences](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [3. Fetching Embeddings](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [4. Bias Analysis](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-        - [4.1 Cosine Similarity](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-        - [4.2 Association Scores](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-        - [4.3 Effect Size (Cohen's d)](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-        - [4.4 Permutation Testing and P-Value](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-        - [4.5 Interpreting Effect Size](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [5. Visualization](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-- [Metrics Used](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-- [Understanding the Statistical Measures](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [Cohen's d](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [P-Value](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-- [Interpreting the Results](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [Confidence Intervals](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [General Interpretation Guidelines](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [Limitations and Considerations](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-    - [Actionable Steps Based on Results](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-- [Conclusion](https://www.notion.so/Bias-Analysis-of-Word-Embeddings-in-Language-Models-127091ff170880199e49c5c1f33e3755?pvs=21)
-
 ## Overview
 
 The goal of this project is to analyze and quantify biases present in word embeddings produced by different language models. It specifically examines biases related to gender, but the methodology can be extended to other types of biases (e.g., racial, age-related). By computing statistical measures, the script evaluates how closely associated certain target words (e.g., male and female terms) are with specific attribute words (e.g., career and family terms).
@@ -178,7 +153,6 @@ To determine if the observed effect size is statistically significant—that is,
   - **Negative Effect Size**: Indicates that the second target group (e.g., female terms) is more closely associated with the first attribute group compared to the first target group.
 
 
-
 **Interpreting Confidence Intervals**:  
 To provide a range within which the true effect size is likely to fall, this offers insight into the precision of the estimated effect size.
 
@@ -191,8 +165,8 @@ To provide a range within which the true effect size is likely to fall, this off
 
 - **Bias Comparison Plot**: The script generates diverging bar charts to visualize the effect sizes (bias levels) across different models and bias categories.
     - **Color Coding**: Bars are colored based on the bias interpretation:
-        - **Blue**: Negligible/No Bias
-        - **Green**: Small Bias
+        - **Green**: Negligible/No Bias
+        - **Blue**: Small Bias
         - **Yellow**: Medium Bias
         - **Red**: Large Bias
     - **Annotations**: Effect sizes and p-values are displayed near the bars to indicate statistical significance.
@@ -218,40 +192,4 @@ To provide a range within which the true effect size is likely to fall, this off
     - Consistent biases observed across multiple models strengthen the evidence of a systemic issue.
 - **Direction of Bias**:
     - Understanding whether the bias favors one group over another is crucial for addressing and mitigating potential impacts.
-- **Confidence Intervals Width**:
-    - **Narrow Confidence Intervals**: Indicate more precise estimates.
-    - **Wide Confidence Intervals**: Suggest greater uncertainty in the effect size estimate.
 
-### Limitations and Considerations
-
-- **Sample Size**:
-    - The number of target and attribute words can affect the reliability of the results. Ensure that word lists are comprehensive and representative.
-- **Template Influence**:
-    - The context provided by sentence templates can influence the embeddings. Use neutral and varied templates to minimize contextual bias.
-- **Multiple Comparisons**:
-    - Conducting multiple tests increases the risk of Type I errors (false positives). Consider applying corrections like the Bonferroni method if appropriate.
-- **Model Variability**:
-    - Differences in model architectures and training data can affect bias measurements. Interpret results within the context of each model's characteristics.
-- **Statistical Assumptions**:
-    - While permutation tests are non-parametric, assumptions about the independence of observations still apply.
-
-### Actionable Steps Based on Results
-
-- **Identifying Bias**:
-    - Significant and substantial biases indicate areas where model adjustments or data interventions may be necessary.
-- **Mitigating Bias**:
-    - Use the insights gained to implement bias mitigation techniques, such as re-training with debiased data, applying post-processing corrections, or using bias regularization during training.
-- **Policy Development**:
-    - Incorporate findings into AI governance frameworks to establish guidelines and best practices for model development and deployment.
-- **Further Research**:
-    - Investigate the sources of bias, such as training data or model architecture, to inform future improvements.
-
-## Conclusion
-
-This script provides a comprehensive analysis of biases present in word embeddings from various language models. By combining statistical measures and permutation testing, it quantifies biases and assesses their significance. The visualizations aid in comparing biases across models, helping researchers and practitioners understand and address biases in language models.
-
-Understanding and interpreting these results is essential for:
-
-- **Model Improvement**: Enhancing fairness and reducing unintended biases in AI systems.
-- **Ethical AI Practices**: Promoting transparency and accountability in AI development.
-- **Informed Decision-Making**: Guiding stakeholders in making data-driven decisions regarding AI deployment and policy.
