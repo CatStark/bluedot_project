@@ -193,3 +193,7 @@ To provide a range within which the true effect size is likely to fall, this off
 - **Direction of Bias**:
     - Understanding whether the bias favors one group over another is crucial for addressing and mitigating potential impacts.
 
+## Usage
+To use this script, use a valid API key for each model on /config/models_config.json. You can then run the main.py that is on the /scripts folder, as it is. 
+You can chose which providers and models to use. 
+
