@@ -1,0 +1,60 @@
+{
+    "models": {
+        "jina-v2": {
+            "provider": "Jina",
+            "type": "api",
+            "model_name": "jina-embeddings-v2-base-en",
+            "api_key_env": "",
+            "endpoint": "https://api.jina.ai/v1/embeddings"
+        },
+        "jina-v3": {
+            "provider": "Jina",
+            "type": "api",
+            "model_name": "jina-embeddings-v3",
+            "api_key_env": "",
+            "endpoint": "https://api.jina.ai/v1/embeddings"
+        },
+        "OpenAI-3-multi": {
+            "provider": "OpenAI",
+            "type": "sdk",
+            "model_name": "text-embedding-3-large",
+            "api_key_env": ""
+        },
+        "Cohere-3-en": {
+            "provider": "Cohere",
+            "type": "sdk",
+            "model_name": "embed-english-v3.0",
+            "api_key_env": ""
+        },
+        "Cohere3-multi": {
+            "provider": "Cohere",
+            "type": "sdk",
+            "model_name": "embed-multilingual-v3.0",
+            "api_key_env": ""
+        },
+        "Voyage-3-finance": {
+            "provider": "Voyage",
+            "type": "sdk",
+            "model_name": "voyage-finance-2",
+            "api_key_env": ""
+        },
+        "Voyage-law-2": {
+            "provider": "Voyage",
+            "type": "sdk",
+            "model_name": "voyage-law-2",
+            "api_key_env": ""
+        },
+        "Voyage-3": {
+            "provider": "Voyage",
+            "type": "sdk",
+            "model_name": "voyage-3",
+            "api_key_env": ""
+        },
+        "Voyage-2-multi": {
+            "provider": "Voyage",
+            "type": "sdk",
+            "model_name": "voyage-multilingual-2",
+            "api_key_env": ""
+        }
+    }
+}
